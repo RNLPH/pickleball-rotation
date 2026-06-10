@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pickleball Rotation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f3f4f6;
+      margin: 0;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .add-btn { background: #3b82f6; color: white; }
+    .court-btn { background: #8b5cf6; color: white; }
+    .clear-btn { background: #ef4444; color: white; }
+
+    .next-btn {
+      background: #10b981;
+      color: white;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .card {
+      background: white;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .courts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .court-block {
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    .court-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .remove-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .remove-court {
+      background: #111827;
+      color: white;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    @media (min-width: 600px) {
+      .courts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 900px) {
+      .courts-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .container {
+        max-width: 900px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🏓 Pickleball Rotation</h1>
+
+  <input id="playerInput" placeholder="Enter player name" />
+
+  <div class="btn-group">
+    <button class="add-btn" onclick="addPlayer()">Add</button>
+    <button class="court-btn" onclick="addCourt()">Add Court</button>
+    <button class="clear-btn" onclick="clearAll()">Clear</button>
+  </div>
+
+  <div class="card">
+    <h3>🏟 Courts</h3>
+    <div id="courtList" class="courts-grid"></div>
+  </div>
+
+  <div class="card">
+    <h3>⏳ Waiting Queue</h3>
+    <div id="queueList"></div>
+  </div>
+
+  <button class="next-btn" onclick="nextMatch()">Next Match 🔄</button>
+
+</div>
+
+<script>
+  let players = [];
+  let courts = [];
+
+  function addPlayer() {
+    const input = document.getElementById("playerInput");
+    const name = input.value.trim();
+    if (!name) return;
+
+    players.push(name);
+    input.value = "";
+
+    fillCourts();
+    render();
+  }
+
+  function addCourt() {
+    courts.push([]);
+    fillCourts();
+    render();
+  }
+
+  function removePlayer(name) {
+    players = players.filter(p => p !== name);
+    fillCourts();
+    render();
+  }
+
+  function removeCourt(index) {
+    courts.splice(index, 1);
+    fillCourts();
+    render();
+  }
+
+  function fillCourts() {
+    let available = [...players];
+    courts.forEach((_, i) => {
+      courts[i] = available.splice(0, 4);
+    });
+  }
+
+  function nextMatch() {
+    const allCourtPlayers = courts.flat();
+    const waiting = players.filter(p => !allCourtPlayers.includes(p));
+
+    players = [...waiting, ...allCourtPlayers];
+
+    fillCourts();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm("Clear all players?")) return;
+    players = [];
+    courts = [];
+    render();
+  }
+
+  function render() {
+    const courtList = document.getElementById("courtList");
+    const queueList = document.getElementById("queueList");
+
+    courtList.innerHTML = "";
+    queueList.innerHTML = "";
+
+    courts.forEach((court, i) => {
+      const div = document.createElement("div");
+      div.className = "court-block";
+
+      const header = document.createElement("div");
+      header.className = "court-header";
+      header.innerHTML = `
+        <strong>Court ${i + 1}</strong>
+        <button class="remove-court" onclick="removeCourt(${i})">Remove</button>
+      `;
+
+      div.appendChild(header);
+
+      court.forEach(player => {
+        const row = document.createElement("div");
+        row.className = "row";
+
+        row.innerHTML = `
+          <span>${player}</span>
+          <button class="remove-btn" onclick="removePlayer('${player}')">❌</button>
+        `;
+        div.appendChild(row);
+      });
+
+      courtList.appendChild(div);
+    });
+
+    
+    const allCourtPlayers = courts.flat();
+
+    players
+      .filter(p => !allCourtPlayers.includes(p))
+      .forEach(player => {
+        const row = document.createElement("div");
+        row.className = "row";
+
+        row.innerHTML = `
+          <span>${player}</span>
+          <button class="remove-btn" onclick="removePlayer('${player}')">❌</button>
+        `;
+        queueList.appendChild(row);
+      });
+  }
+</script>
+
+</body>
+</html>
